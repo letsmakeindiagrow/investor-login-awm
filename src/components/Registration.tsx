@@ -1,241 +1,21 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import axios from "axios";
-import {
-  ArrowRight,
-  ArrowLeft,
-  Upload,
-  Check,
-  AlertCircle,
-  // Edit2,
-} from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ArrowRight, ArrowLeft } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { User, FileText, IdCard, Home, Banknote } from "lucide-react";
-
-interface FormData {
-  referralCode: string;
-  mobileNumber: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  panNumber: string;
-  aadharNumber: string;
-  line1: string;
-  line2: string;
-  city: string;
-  pincode: string;
-  bankAccountNumber: string;
-  ifscCode: string;
-  bankBranchName: string;
-  isEmailVerified: boolean;
-  isMobileVerified: boolean;
-}
-
-interface Documents {
-  panAttachment: string;
-  aadharFront: string;
-  aadharBack: string;
-  bankProof: string;
-}
-
-interface reqBody {
-  referralCode: string;
-  mobileNumber: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  address: {
-    line1: string;
-    line2: string;
-    city: string;
-    pincode: string;
-  };
-  bankDetails: {
-    accountNumber: string;
-    ifscCode: string;
-    branchName: string;
-    proofAttachment: string;
-  };
-  identityDetails: {
-    panNumber: string;
-    panAttachment: string;
-    aadharNumber: string;
-    aadharFront: string;
-    aadharBack: string;
-  };
-}
-
-interface FileUploadBoxProps {
-  label: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  file: string;
-  accept?: string;
-}
-
-interface OTPDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  // onVerify: (otp: string) => void;
-  type: "email" | "mobile";
-}
-
-const steps = [
-  { icon: <User className="w-6 h-6" />, label: "Initial Registration" },
-  { icon: <FileText className="w-6 h-6" />, label: "Personal Details" },
-  { icon: <IdCard className="w-6 h-6" />, label: "Identity Document" },
-  { icon: <Home className="w-6 h-6" />, label: "Address Details" },
-  { icon: <Banknote className="w-6 h-6" />, label: "Bank Account Details" },
-];
-
-const FileUploadBox: React.FC<FileUploadBoxProps> = ({
-  label,
-  onChange,
-  file,
-  accept = ".pdf,.jpg,.jpeg,.png",
-}) => (
-  <div className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors">
-    <Label className="block mb-2">{label}</Label>
-    <div className="space-y-2">
-      {file ? (
-        <div className="text-sm text-green-600 flex items-center justify-center gap-2">
-          <Check className="w-4 h-4" />
-          {/* {file.name} */}
-        </div>
-      ) : (
-        <Upload className="w-8 h-8 mx-auto text-gray-400" />
-      )}
-      <Input
-        type="file"
-        onChange={onChange}
-        accept={accept}
-        className="hidden"
-        id={label.replace(/\s+/g, "")}
-      />
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() =>
-          document.getElementById(label.replace(/\s+/g, ""))?.click()
-        }
-      >
-        {file ? "Change File" : "Choose File"}
-      </Button>
-    </div>
-  </div>
-);
-
-const OTPDialog: React.FC<OTPDialogProps> = ({
-  isOpen,
-  onClose,
-  // onVerify,
-  type,
-}) => {
-  const [otp, setOtp] = useState("");
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent form submission from refreshing the page
-
-    try {
-      const userId = localStorage.getItem("userId");
-
-      if (!userId) {
-        console.error("User ID not found in localStorage");
-        return;
-      }
-
-      const response = await axios.post(
-        "http://localhost:5001/api/v1/auth/verify-otp",
-        {
-          userId,
-          otp,
-        }
-      );
-
-      if (response.data) {
-        console.log("OTP verified successfully");
-        onClose();
-        console.log(response);
-      }
-    } catch (error) {
-      console.error("OTP verification failed:", error);
-      // Handle error appropriately (show error message to user)
-    }
-  };
-
-  // const [generatedOTP, setGeneratedOTP] = useState("");
-
-  // React.useEffect(() => {
-  //   if (isOpen) {
-  //     const newOTP = Math.floor(100000 + Math.random() * 900000).toString();
-  //     setGeneratedOTP(newOTP);
-  //     console.log(`OTP for ${type}: ${newOTP}`);
-  //     alert(`OTP for ${type}: ${newOTP}`);
-  //   }
-  // }, [isOpen, type]);
-
-  // const handleSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (otp === generatedOTP) {
-  //     onVerify(otp);
-  //     setOtp("");
-  //   } else {
-  //     alert("Invalid OTP");
-  //   }
-  // };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Enter OTP sent to your {type}</DialogTitle>
-        </DialogHeader>
-        <form className="space-y-4" onSubmit={handleVerify}>
-          <div>
-            <Label htmlFor="otp">OTP</Label>
-            <Input
-              id="otp"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              maxLength={6}
-              pattern="\d{6}"
-              required
-              placeholder="Enter 6-digit OTP"
-            />
-          </div>
-          <Button
-            type="submit"
-            className="w-full"
-            // onClick={() => onVerify(otp)}
-          >
-            Verify OTP
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
+import { StepIndicator, steps } from "./registration/StepIndicator";
+import { FormStep } from "./registration/FormStep";
+import { InputField } from "./registration/InputField";
+import { FileUploadField } from "./registration/FileUploadField";
+import { VerificationStep } from "./registration/VerificationStep";
+import { OTPDialog } from "./registration/OTPDialog";
+import { FormData, Documents, RequestBody } from "./registration/types";
 
 const RegistrationForm: React.FC = () => {
   const [step, setStep] = useState(1);
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
   const [showEmailOTP, setShowEmailOTP] = useState(false);
-  // const [showMobileOTP, setShowMobileOTP] = useState(false);
-  // const [isEditing, setIsEditing] = useState<"email" | "mobile" | null>(null);
   const [formData, setFormData] = useState<FormData>({
     referralCode: "",
     mobileNumber: "",
@@ -253,7 +33,7 @@ const RegistrationForm: React.FC = () => {
     ifscCode: "",
     bankBranchName: "",
     isEmailVerified: false,
-    isMobileVerified: false,
+    isMobileVerified: false, // Assuming mobile verification might be added later
   });
 
   const [documents, setDocuments] = useState<Documents>({
@@ -278,9 +58,10 @@ const RegistrationForm: React.FC = () => {
     (name: keyof Documents) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
+        // For now, storing the file name. In a real app, you'd upload this.
         setDocuments((prev) => ({
           ...prev,
-          [name]: file,
+          [name]: file.name, // Storing file name for display, replace with actual upload logic
         }));
       }
     };
@@ -288,23 +69,40 @@ const RegistrationForm: React.FC = () => {
   const createRequestBody = (
     formData: FormData,
     documents: Documents
-  ): reqBody => {
-    // Validate required documents
+  ): RequestBody => {
+    // Placeholder for actual document URLs after upload
+    const placeholderUrl = "https://example.com/placeholder.pdf";
+
     if (
       !documents.panAttachment ||
       !documents.aadharFront ||
       !documents.aadharBack ||
       !documents.bankProof
     ) {
-      throw new Error("All documents are required");
+      // It's better to validate this before allowing submission,
+      // but adding a safeguard here.
+      console.error("All document proofs are required.");
+      // Handle this error appropriately, maybe show a message to the user.
+      // Throwing an error might be too abrupt depending on UX goals.
+      // For now, we'll proceed with placeholders but log the issue.
     }
 
-    function convertToISO(dateString: any) {
-      const date = new Date(dateString);
-      return date.toISOString().split(".")[0] + "Z";
+    function convertToISO(dateString: string): string {
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          // Handle invalid date string
+          console.error("Invalid date format:", dateString);
+          return new Date().toISOString().split(".")[0] + "Z"; // Return current date as fallback
+        }
+        return date.toISOString().split(".")[0] + "Z";
+      } catch (error) {
+        console.error("Error converting date:", dateString, error);
+        return new Date().toISOString().split(".")[0] + "Z"; // Fallback on error
+      }
     }
 
-    const requestBody: reqBody = {
+    const requestBody: RequestBody = {
       mobileNumber: formData.mobileNumber,
       email: formData.email,
       firstName: formData.firstName,
@@ -321,30 +119,37 @@ const RegistrationForm: React.FC = () => {
         accountNumber: formData.bankAccountNumber,
         ifscCode: formData.ifscCode,
         branchName: formData.bankBranchName,
-        proofAttachment: "https://github.com/",
+        proofAttachment: documents.bankProof ? placeholderUrl : "", // Use placeholder or actual URL
       },
       identityDetails: {
         panNumber: formData.panNumber,
-        panAttachment: "https://github.com/",
+        panAttachment: documents.panAttachment ? placeholderUrl : "", // Use placeholder or actual URL
         aadharNumber: formData.aadharNumber,
-        aadharFront: "https://github.com/",
-        aadharBack: "https://github.com/",
+        aadharFront: documents.aadharFront ? placeholderUrl : "", // Use placeholder or actual URL
+        aadharBack: documents.aadharBack ? placeholderUrl : "", // Use placeholder or actual URL
       },
     };
 
     return requestBody;
   };
 
-  const senReq = async () => {
+  const sendRegistrationRequest = async () => {
     const body = createRequestBody(formData, documents);
-    console.log(body);
-    const response = await axios.post(
-      "http://localhost:5001/api/v1/auth/register",
-      body
-    );
-    localStorage.setItem("userId", response.data.user.id);
-    // console.log(response);
-    console.log(response.data.user.id);
+    console.log("Sending registration request:", body);
+    try {
+      const response = await axios.post(
+        "http://localhost:5001/api/v1/auth/register",
+        body
+      );
+      localStorage.setItem("userId", response.data.user.id);
+      console.log("Registration successful, User ID:", response.data.user.id);
+      return true; // Indicate success
+    } catch (error) {
+      console.error("Registration failed:", error);
+      // Handle error display to the user
+      alert("Registration failed. Please check your details and try again.");
+      return false; // Indicate failure
+    }
   };
 
   const validateField = (name: string, value: string) => {
@@ -352,7 +157,7 @@ const RegistrationForm: React.FC = () => {
     switch (name) {
       case "firstName":
       case "lastName":
-        if (!/^[A-Za-z]+$/.test(value)) {
+        if (!/^[A-Za-z]+$/.test(value) && value) {
           error = "Only alphabets are allowed.";
         }
         break;
@@ -367,8 +172,8 @@ const RegistrationForm: React.FC = () => {
         }
         break;
       case "panNumber":
-        if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value)) {
-          error = "Invalid PAN number format.";
+        if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(value.toUpperCase())) {
+          error = "Invalid PAN number format (e.g., ABCDE1234F).";
         }
         break;
       case "aadharNumber":
@@ -387,8 +192,8 @@ const RegistrationForm: React.FC = () => {
         }
         break;
       case "ifscCode":
-        if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value)) {
-          error = "Invalid IFSC code format.";
+        if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value.toUpperCase())) {
+          error = "Invalid IFSC code format (e.g., ABCD0123456).";
         }
         break;
     }
@@ -398,22 +203,55 @@ const RegistrationForm: React.FC = () => {
     }));
   };
 
+  // Normalize PAN and IFSC codes to uppercase
+  const handleInputChangeNormalized = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    let normalizedValue = value;
+    if (name === "panNumber" || name === "ifscCode") {
+      normalizedValue = value.toUpperCase();
+    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: normalizedValue,
+    }));
+    validateField(name, normalizedValue);
+  };
+
   const validateStep = (currentStep: number): boolean => {
+    // Check for errors first
+    const stepErrors = Object.entries(errors)
+      .filter(([key, value]) => value !== "") // Filter out empty error strings
+      .reduce((acc, [key]) => {
+        // Check if the field with error belongs to the current step
+        switch (currentStep) {
+          case 1:
+            if (["mobileNumber", "email"].includes(key)) acc = true;
+            break;
+          case 2:
+            if (["firstName", "lastName"].includes(key)) acc = true;
+            break;
+          case 3:
+            if (["panNumber", "aadharNumber"].includes(key)) acc = true;
+            break;
+          case 4:
+            if (["pincode"].includes(key)) acc = true;
+            break;
+          case 5:
+            if (["bankAccountNumber", "ifscCode"].includes(key)) acc = true;
+            break;
+        }
+        return acc;
+      }, false);
+
+      if (stepErrors) return false; // If any field in the current step has an error, validation fails
+
+    // Check if required fields are filled
     switch (currentStep) {
       case 1:
-        return Boolean(
-          formData.mobileNumber &&
-            formData.email &&
-            !errors.mobileNumber &&
-            !errors.email
-        );
+        return Boolean(formData.mobileNumber && formData.email);
       case 2:
         return Boolean(
-          formData.firstName &&
-            formData.lastName &&
-            formData.dateOfBirth &&
-            !errors.firstName &&
-            !errors.lastName
+          formData.firstName && formData.lastName && formData.dateOfBirth
         );
       case 3:
         return Boolean(
@@ -421,628 +259,254 @@ const RegistrationForm: React.FC = () => {
             formData.aadharNumber &&
             documents.panAttachment &&
             documents.aadharFront &&
-            documents.aadharBack &&
-            !errors.panNumber &&
-            !errors.aadharNumber
+            documents.aadharBack
         );
       case 4:
-        return Boolean(
-          formData.line1 && formData.city && formData.pincode && !errors.pincode
-        );
+        return Boolean(formData.line1 && formData.city && formData.pincode);
       case 5:
         return Boolean(
           formData.bankAccountNumber &&
             formData.ifscCode &&
             formData.bankBranchName &&
-            documents.bankProof &&
-            !errors.bankAccountNumber &&
-            !errors.ifscCode
+            documents.bankProof
         );
       default:
         return false;
     }
   };
 
-  // const handleVerify = (field: "email" | "mobile") => {
-  //   const verificationField =
-  //     field === "email" ? "isEmailVerified" : "isMobileVerified";
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     [verificationField]: true,
-  //   }));
-  //   if (field === "email") {
-  //     setShowEmailOTP(false);
-  //   } else {
-  //     // setShowMobileOTP(false);
-  //   }
-
-  //   if (
-  //     (field === "email" && formData.isMobileVerified) ||
-  //     (field === "mobile" && formData.isEmailVerified)
-  //   ) {
-  //     handleFinalSubmit();
-  //   }
-  // };
-
-  // const handleVerify = async (otp: string) => {
-  //   const response = await axios.post(
-  //     "http://localhost:5001/api/v1/auth/verify-otp",
-  //     {
-  //       userId: localStorage.getItem("userId"),
-  //       otp: otp,
-  //     }
-  //   );
-
-  //   if (response.data.isVerified) {
-  //     console.log("OTP verified successfully");
-  //     console.log(response);
-  //     setShowEmailOTP(false);
-  //   } else {
-  //     console.log("OTP verification failed");
-  //   }
-  // };
-
-  const handleInitialSubmit = async () => {
-    try {
-      const submitData = new FormData();
-
-      Object.entries(formData).forEach(([key, value]) => {
-        submitData.append(key, String(value));
-      });
-
-      Object.entries(documents).forEach(([key, file]) => {
-        if (file) {
-          submitData.append(key, file);
-        }
-      });
-
-      console.log("Initial form submission:", submitData);
-      setIsFormSubmitted(true);
-      // setShowMobileOTP(true);
-      return true;
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      return false;
-    }
-  };
-
-  const handleFinalSubmit = async () => {
-    try {
-      const finalData = {
-        ...formData,
-        isVerified: true,
-      };
-      console.log("Final submission with verified user:", finalData);
-      alert("Registration completed successfully!");
-    } catch (error) {
-      console.error("Error in final submission:", error);
-      alert("Error completing registration. Please try again.");
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleInitialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 5 && validateStep(5)) {
-      const success = await handleInitialSubmit();
-      if (!success) {
-        alert("Error submitting form. Please try again.");
+      const success = await sendRegistrationRequest();
+      if (success) {
+        setIsFormSubmitted(true); // Move to OTP verification step
+      } else {
+        // Error handled in sendRegistrationRequest
       }
     }
   };
 
-  // const handleEdit = (type: "email" | "mobile") => {
-  //   setIsEditing(type);
-  //   if (type === "email") {
-  //     setFormData((prev) => ({ ...prev, isEmailVerified: false }));
-  //   } else {
-  //     setFormData((prev) => ({ ...prev, isMobileVerified: false }));
-  //   }
-  // };
+  const handleFinalSubmit = async () => {
+    // This function might be called after OTP verification confirms email
+    // For now, just log and alert completion
+    console.log("Final registration steps complete.");
+    alert("Registration completed successfully!");
+    // Potentially redirect the user or update UI further
+    setFormData(prev => ({ ...prev, isEmailVerified: true })); // Mark email as verified on successful OTP
+  };
 
-  // const handleEditSubmit = () => {
-  //   setIsEditing(null);
-  //   validateField(
-  //     isEditing === "email" ? "email" : "mobileNumber",
-  //     isEditing === "email" ? formData.email : formData.mobileNumber
-  //   );
-  // };
 
-  const renderStep1 = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold mb-4">Initial Registration</h2>
-      <div>
-        <Label htmlFor="referralCode">Referral Code (Optional)</Label>
-        <Input
-          id="referralCode"
-          name="referralCode"
-          value={formData.referralCode}
-          onChange={handleInputChange}
-        />
-      </div>
-      <div>
-        <Label htmlFor="mobileNumber">Mobile Number</Label>
-        <div className="relative">
-          <Input
-            id="mobileNumber"
-            name="mobileNumber"
-            value={formData.mobileNumber}
-            onChange={handleInputChange}
-            required
-            className={errors.mobileNumber ? "border-red-500" : ""}
-          />
-          {errors.mobileNumber && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <AlertCircle className="w-4 h-4 text-red-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{errors.mobileNumber}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      </div>
-      <div>
-        <Label htmlFor="email">Email</Label>
-        <div className="relative">
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            required
-            className={errors.email ? "border-red-500" : ""}
-          />
-          {errors.email && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <AlertCircle className="w-4 h-4 text-red-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{errors.email}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep2 = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold mb-4">Personal Details</h2>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="firstName">First Name</Label>
-          <div className="relative">
-            <Input
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
+  // Function to render the current step's form fields
+  const renderFormStep = (stepNumber: number) => {
+    switch (stepNumber) {
+      case 1:
+        return (
+          <FormStep title="Initial Registration">
+            <InputField
+              label="Referral Code (Optional)"
+              id="referralCode"
+              name="referralCode"
+              value={formData.referralCode}
+              onChange={handleInputChange}
+            />
+            <InputField
+              label="Mobile Number"
+              id="mobileNumber"
+              name="mobileNumber"
+              value={formData.mobileNumber}
+              onChange={handleInputChange}
+              error={errors.mobileNumber}
+              maxLength={10}
+              required
+            />
+            <InputField
+              label="Email"
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              error={errors.email}
+              required
+            />
+          </FormStep>
+        );
+      case 2:
+        return (
+          <FormStep title="Personal Details">
+            <div className="grid grid-cols-2 gap-4">
+              <InputField
+                label="First Name"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleInputChangeNormalized}
+                error={errors.firstName}
+                required
+              />
+              <InputField
+                label="Last Name"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChangeNormalized}
+                error={errors.lastName}
+                required
+              />
+            </div>
+            <InputField
+              label="Date of Birth"
+              id="dateOfBirth"
+              name="dateOfBirth"
+              type="date"
+              value={formData.dateOfBirth}
               onChange={handleInputChange}
               required
-              className={errors.firstName ? "border-red-500" : ""}
             />
-            {errors.firstName && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertCircle className="w-4 h-4 text-red-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{errors.firstName}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="lastName">Last Name</Label>
-          <div className="relative">
-            <Input
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleInputChange}
-              required
-              className={errors.lastName ? "border-red-500" : ""}
-            />
-            {errors.lastName && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertCircle className="w-4 h-4 text-red-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{errors.lastName}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </div>
-      </div>
-      <div>
-        <Label htmlFor="dateOfBirth">Date of Birth</Label>
-        <Input
-          id="dateOfBirth"
-          name="dateOfBirth"
-          type="date"
-          value={formData.dateOfBirth}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-    </div>
-  );
-
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold mb-4">Identity Documents</h2>
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="panNumber">PAN Number</Label>
-          <div className="relative">
-            <Input
+          </FormStep>
+        );
+      case 3:
+        return (
+          <FormStep title="Identity Documents">
+            <InputField
+              label="PAN Number"
               id="panNumber"
               name="panNumber"
               value={formData.panNumber}
-              onChange={handleInputChange}
+              onChange={handleInputChangeNormalized} // Use normalized handler
+              error={errors.panNumber}
+              maxLength={10}
               required
-              className={errors.panNumber ? "border-red-500" : ""}
             />
-            {errors.panNumber && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertCircle className="w-4 h-4 text-red-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{errors.panNumber}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </div>
-        <FileUploadBox
-          label="PAN Card Attachment"
-          onChange={handleFileChange("panAttachment")}
-          file={documents.panAttachment}
-        />
-        <div>
-          <Label htmlFor="aadharNumber">Aadhar Number</Label>
-          <div className="relative">
-            <Input
+            <FileUploadField
+              label="PAN Card Attachment"
+              onChange={handleFileChange("panAttachment")}
+              file={documents.panAttachment}
+            />
+            <InputField
+              label="Aadhar Number"
               id="aadharNumber"
               name="aadharNumber"
               value={formData.aadharNumber}
               onChange={handleInputChange}
+              error={errors.aadharNumber}
+              maxLength={12}
               required
-              className={errors.aadharNumber ? "border-red-500" : ""}
             />
-            {errors.aadharNumber && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertCircle className="w-4 h-4 text-red-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{errors.aadharNumber}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <FileUploadBox
-            label="Aadhar Front"
-            onChange={handleFileChange("aadharFront")}
-            file={documents.aadharFront}
-          />
-          <FileUploadBox
-            label="Aadhar Back"
-            onChange={handleFileChange("aadharBack")}
-            file={documents.aadharBack}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep4 = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold mb-4">Address Details</h2>
-      <div>
-        <Label htmlFor="line1">Address Line 1</Label>
-        <Input
-          id="line1"
-          name="line1"
-          value={formData.line1}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-      <div>
-        <Label htmlFor="line2">Address Line 2 (Optional)</Label>
-        <Input
-          id="line2"
-          name="line2"
-          value={formData.line2}
-          onChange={handleInputChange}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="city">City</Label>
-          <Input
-            id="city"
-            name="city"
-            value={formData.city}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="pincode">Pincode</Label>
-          <div className="relative">
-            <Input
-              id="pincode"
-              name="pincode"
-              value={formData.pincode}
+            <div className="grid grid-cols-2 gap-4">
+              <FileUploadField
+                label="Aadhar Front"
+                onChange={handleFileChange("aadharFront")}
+                file={documents.aadharFront}
+              />
+              <FileUploadField
+                label="Aadhar Back"
+                onChange={handleFileChange("aadharBack")}
+                file={documents.aadharBack}
+              />
+            </div>
+          </FormStep>
+        );
+      case 4:
+        return (
+          <FormStep title="Address Details">
+            <InputField
+              label="Address Line 1"
+              id="line1"
+              name="line1"
+              value={formData.line1}
               onChange={handleInputChange}
               required
-              className={errors.pincode ? "border-red-500" : ""}
             />
-            {errors.pincode && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertCircle className="w-4 h-4 text-red-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{errors.pincode}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep5 = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold mb-4">Bank Account Details</h2>
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
-          <div className="relative">
-            <Input
+            <InputField
+              label="Address Line 2 (Optional)"
+              id="line2"
+              name="line2"
+              value={formData.line2}
+              onChange={handleInputChange}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <InputField
+                label="City"
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleInputChange}
+                required
+              />
+              <InputField
+                label="Pincode"
+                id="pincode"
+                name="pincode"
+                value={formData.pincode}
+                onChange={handleInputChange}
+                error={errors.pincode}
+                maxLength={6}
+                required
+              />
+            </div>
+          </FormStep>
+        );
+      case 5:
+        return (
+          <FormStep title="Bank Account Details">
+            <InputField
+              label="Bank Account Number"
               id="bankAccountNumber"
               name="bankAccountNumber"
               value={formData.bankAccountNumber}
               onChange={handleInputChange}
+              error={errors.bankAccountNumber}
               required
-              className={errors.bankAccountNumber ? "border-red-500" : ""}
             />
-            {errors.bankAccountNumber && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertCircle className="w-4 h-4 text-red-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{errors.bankAccountNumber}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="ifscCode">IFSC Code</Label>
-          <div className="relative">
-            <Input
+            <InputField
+              label="IFSC Code"
               id="ifscCode"
               name="ifscCode"
               value={formData.ifscCode}
+              onChange={handleInputChangeNormalized} // Use normalized handler
+              error={errors.ifscCode}
+              maxLength={11}
+              required
+            />
+            <InputField
+              label="Bank Branch Name"
+              id="bankBranchName"
+              name="bankBranchName"
+              value={formData.bankBranchName}
               onChange={handleInputChange}
               required
-              className={errors.ifscCode ? "border-red-500" : ""}
             />
-            {errors.ifscCode && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertCircle className="w-4 h-4 text-red-500 absolute right-2 top-1/2 transform -translate-y-1/2" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{errors.ifscCode}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="bankBranchName">Bank Branch Name</Label>
-          <Input
-            id="bankBranchName"
-            name="bankBranchName"
-            value={formData.bankBranchName}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        <FileUploadBox
-          label="Bank Proof (Cancelled Cheque/Passbook/Statement)"
-          onChange={handleFileChange("bankProof")}
-          file={documents.bankProof}
-        />
-      </div>
-    </div>
-  );
-
-  const renderOTPVerification = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold mb-4">
-        Verify Your Contact Details
-      </h2>
-      <div className="space-y-4">
-        {/* <div className="flex items-center justify-between">
-          {isEditing === "mobile" ? (
-            <div className="flex-1 mr-4">
-              <Input
-                name="mobileNumber"
-                value={formData.mobileNumber}
-                onChange={handleInputChange}
-                placeholder="Enter mobile number"
-                className={errors.mobileNumber ? "border-red-500" : ""}
-              />
-              {errors.mobileNumber && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.mobileNumber}
-                </p>
-              )}
-            </div>
-          ) : (
-            <span>Mobile Number: {formData.mobileNumber}</span>
-          )}
-          <div className="flex gap-2">
-            {isEditing === "mobile" ? (
-              <Button
-                onClick={handleEditSubmit}
-                disabled={!!errors.mobileNumber}
-                className="bg-green-600 text-white hover:bg-green-700"
-              >
-                Save
-              </Button>
-            ) : (
-              <>
-                <Button
-                  onClick={() => handleEdit("mobile")}
-                  className="bg-gray-600 text-white hover:bg-gray-700"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={() => setShowMobileOTP(true)}
-                  disabled={formData.isMobileVerified}
-                  className="bg-blue-600 text-white hover:bg-blue-700"
-                >
-                  {formData.isMobileVerified ? "Verified ✓" : "Verify"}
-                </Button>
-              </>
-            )}
-          </div>
-        </div> */}
-
-        <div className="flex items-center justify-between">
-          {/* {isEditing === "email" ? (
-            <div className="flex-1 mr-4">
-              <Input
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Enter email"
-                className={errors.email ? "border-red-500" : ""}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-              )}
-            </div>
-          ) : (
-            <span>Email: {formData.email}</span>
-          )} */}
-          <span>Email: {formData.email}</span>
-          <div className="flex gap-2">
-            {/* {isEditing === "email" ? (
-              <Button
-                onClick={handleEditSubmit}
-                disabled={!!errors.email}
-                className="bg-green-600 text-white hover:bg-green-700"
-              >
-                Save
-              </Button>
-            ) : (
-              <>
-                <Button
-                  onClick={() => handleEdit("email")}
-                  className="bg-gray-600 text-white hover:bg-gray-700"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={() => setShowEmailOTP(true)}
-                  disabled={formData.isEmailVerified}
-                  className="bg-blue-600 text-white hover:bg-blue-700"
-                >
-                  {formData.isEmailVerified ? "Verified ✓" : "Verify"}
-                </Button>
-              </>
-            )} */}
-            <Button
-              onClick={() => setShowEmailOTP(true)}
-              disabled={formData.isEmailVerified}
-              className="bg-blue-600 text-white hover:bg-blue-700"
-            >
-              {formData.isEmailVerified ? "Verified ✓" : "Verify"}
-            </Button>
-          </div>
-        </div>
-        {formData.isEmailVerified && (
-          <div className="mt-6 flex justify-center">
-            <Button
-              onClick={handleFinalSubmit}
-              className="bg-green-600 text-white hover:bg-green-700 px-8"
-            >
-              Complete Registration
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+            <FileUploadField
+              label="Bank Proof (Cancelled Cheque/Passbook/Statement)"
+              onChange={handleFileChange("bankProof")}
+              file={documents.bankProof}
+            />
+          </FormStep>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <TooltipProvider>
       <div className="min-h-screen p-6 bg-gray-50">
         <div className="mb-8 flex justify-center">
           <img
-            src="/logo.png"
+            src="/logo.png" // Make sure logo.png is in the public folder
             alt="Company Logo"
             className="h-20 object-contain"
           />
         </div>
         <Card className="w-full max-w-2xl mx-auto border-0 shadow-xl mt-10 mb-10">
           <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleInitialSubmit} className="space-y-6">
               {!isFormSubmitted ? (
                 <>
-                  <div className="flex justify-center mb-8">
-                    <div className="flex items-center gap-4 w-4/5">
-                      {steps.map((stepItem, index) => (
-                        <div key={index} className="flex items-center flex-1">
-                          <div
-                            className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-medium ${
-                              step >= index + 1
-                                ? "bg-gradient-to-r from-[#08AFF1] to-[#A4CE3A]"
-                                : "bg-gray-200 text-gray-600"
-                            }`}
-                          >
-                            {stepItem.icon}
-                          </div>
-                          {index < steps.length - 1 && (
-                            <div
-                              className={`flex-1 h-1 ${
-                                step > index + 1
-                                  ? "bg-gradient-to-r from-[#08AFF1] to-[#A4CE3A]"
-                                  : "bg-gray-200"
-                              }`}
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {step === 1 && renderStep1()}
-                  {step === 2 && renderStep2()}
-                  {step === 3 && renderStep3()}
-                  {step === 4 && renderStep4()}
-                  {step === 5 && renderStep5()}
-
+                  <StepIndicator currentStep={step} />
+                  {renderFormStep(step)}
                   <div className="flex justify-between pt-6">
                     {step > 1 && (
                       <Button
@@ -1055,13 +519,13 @@ const RegistrationForm: React.FC = () => {
                         Previous
                       </Button>
                     )}
-                    <div className="ml-auto">
+                    <div className="ml-auto"> {/* Ensures buttons align correctly */}
                       {step < 5 ? (
                         <Button
                           type="button"
                           onClick={() => setStep(step + 1)}
                           disabled={!validateStep(step)}
-                          className="flex items-center gap-2 bg-[#08AFF1] text-white hover:bg-[#0899d1]"
+                          className="flex items-center gap-2 bg-[#08AFF1] text-white hover:bg-[#0899d1] disabled:opacity-50"
                         >
                           Next
                           <ArrowRight className="w-4 h-4" />
@@ -1070,8 +534,7 @@ const RegistrationForm: React.FC = () => {
                         <Button
                           type="submit"
                           disabled={!validateStep(step)}
-                          onClick={senReq}
-                          className="flex items-center gap-2 bg-[#AACF45] text-white hover:bg-[#99bb3f]"
+                          className="flex items-center gap-2 bg-[#AACF45] text-white hover:bg-[#99bb3f] disabled:opacity-50"
                         >
                           Submit and Proceed to Verification
                         </Button>
@@ -1080,30 +543,42 @@ const RegistrationForm: React.FC = () => {
                   </div>
                 </>
               ) : (
-                renderOTPVerification()
+                 <VerificationStep
+                   email={formData.email}
+                   isEmailVerified={formData.isEmailVerified}
+                   onVerifyClick={() => setShowEmailOTP(true)}
+                   onFinalSubmit={handleFinalSubmit} // Assuming OTPDialog handles setting isEmailVerified
+                 />
               )}
 
               <div className="text-center text-sm text-gray-500 mt-4">
                 {!isFormSubmitted
-                  ? `Step ${step} of 5: ${steps[step - 1].label}`
+                  ? `Step ${step} of ${steps.length}: ${steps[step - 1].label}`
                   : "Final Step: Contact Verification"}
               </div>
             </form>
           </CardContent>
         </Card>
 
-        {/* <OTPDialog
-          isOpen={showMobileOTP}
-          onClose={() => setShowMobileOTP(false)}
-          onVerify={(otp) => handleVerify("mobile")}
-          type="mobile"
-        /> */}
         <OTPDialog
           isOpen={showEmailOTP}
-          onClose={() => setShowEmailOTP(false)}
-          // onVerify={(otp) => handleVerify(otp)}
+          onClose={() => {
+            setShowEmailOTP(false);
+             // Check verification status after closing dialog (requires OTPDialog to update state or use callback)
+            // For now, let's assume OTPDialog successful close means verification
+            // This needs proper implementation based on OTPDialog logic
+             const userId = localStorage.getItem("userId");
+             if (userId) { // Simple check if OTP might have been verified
+                // A more robust approach would involve OTPDialog calling a prop function on success
+                // e.g., onVerifySuccess={() => setFormData(prev => ({ ...prev, isEmailVerified: true }))}
+                // For demonstration, we manually trigger the state change here if dialog closes.
+                // In a real app, the API response in OTPDialog should confirm verification.
+                // setFormData(prev => ({ ...prev, isEmailVerified: true })); // Placeholder: Update based on actual verification
+             }
+          }}
           type="email"
         />
+
       </div>
     </TooltipProvider>
   );

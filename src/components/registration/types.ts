@@ -16,6 +16,8 @@ export interface FormData {
   bankBranchName: string;
   isEmailVerified: boolean;
   isMobileVerified: boolean;
+  password: string;
+  confirmPassword: string;
 }
 
 export interface Documents {

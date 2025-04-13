@@ -34,6 +34,8 @@ const RegistrationForm: React.FC = () => {
     bankBranchName: "",
     isEmailVerified: false,
     isMobileVerified: false, // Assuming mobile verification might be added later
+    password: "",
+    confirmPassword: "",
   });
 
   const [documents, setDocuments] = useState<Documents>({
@@ -128,6 +130,7 @@ const RegistrationForm: React.FC = () => {
         aadharFront: documents.aadharFront ? placeholderUrl : "", // Use placeholder or actual URL
         aadharBack: documents.aadharBack ? placeholderUrl : "", // Use placeholder or actual URL
       },
+      password: formData.password,
     };
 
     return requestBody;
@@ -194,6 +197,16 @@ const RegistrationForm: React.FC = () => {
       case "ifscCode":
         if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(value.toUpperCase())) {
           error = "Invalid IFSC code format (e.g., ABCD0123456).";
+        }
+        break;
+      case "password":
+        if (value.length < 8) {
+          error = "Password must be at least 8 characters long.";
+        }
+        break;
+      case "confirmPassword":
+        if (value !== formData.password) {
+          error = "Passwords do not match.";
         }
         break;
     }
@@ -328,6 +341,26 @@ const RegistrationForm: React.FC = () => {
               value={formData.email}
               onChange={handleInputChange}
               error={errors.email}
+              required
+            />
+            <InputField
+              label="Password"
+              id="password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              error={errors.password}
+              required
+            />
+            <InputField
+              label="Confirm Password"
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              error={errors.confirmPassword}
               required
             />
           </FormStep>

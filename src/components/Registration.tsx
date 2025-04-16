@@ -141,7 +141,7 @@ const RegistrationForm: React.FC = () => {
     console.log("Sending registration request:", body);
     try {
       const response = await axios.post(
-        "https://awm-mvp-backend.onrender.com/api/v1/auth/register",
+        "https://backend.aadyanviwealth.com/api/v1/auth/register",
         body,
         {
           withCredentials: true,

@@ -142,7 +142,10 @@ const RegistrationForm: React.FC = () => {
     try {
       const response = await axios.post(
         "https://awm-mvp-backend.onrender.com/api/v1/auth/register",
-        body
+        body,
+        {
+          withCredentials: true,
+        }
       );
       localStorage.setItem("userId", response.data.user.id);
       console.log("Registration successful, User ID:", response.data.user.id);

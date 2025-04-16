@@ -217,7 +217,9 @@ const RegistrationForm: React.FC = () => {
   };
 
   // Normalize PAN and IFSC codes to uppercase
-  const handleInputChangeNormalized = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChangeNormalized = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const { name, value } = e.target;
     let normalizedValue = value;
     if (name === "panNumber" || name === "ifscCode") {
@@ -233,7 +235,7 @@ const RegistrationForm: React.FC = () => {
   const validateStep = (currentStep: number): boolean => {
     // Check for errors first
     const stepErrors = Object.entries(errors)
-      .filter(([key, value]) => value !== "") // Filter out empty error strings
+      .filter(([, value]) => value !== "") // Filter out empty error strings
       .reduce((acc, [key]) => {
         // Check if the field with error belongs to the current step
         switch (currentStep) {
@@ -256,7 +258,7 @@ const RegistrationForm: React.FC = () => {
         return acc;
       }, false);
 
-      if (stepErrors) return false; // If any field in the current step has an error, validation fails
+    if (stepErrors) return false; // If any field in the current step has an error, validation fails
 
     // Check if required fields are filled
     switch (currentStep) {
@@ -306,9 +308,8 @@ const RegistrationForm: React.FC = () => {
     console.log("Final registration steps complete.");
     alert("Registration completed successfully!");
     // Potentially redirect the user or update UI further
-    setFormData(prev => ({ ...prev, isEmailVerified: true })); // Mark email as verified on successful OTP
+    setFormData((prev) => ({ ...prev, isEmailVerified: true })); // Mark email as verified on successful OTP
   };
-
 
   // Function to render the current step's form fields
   const renderFormStep = (stepNumber: number) => {
@@ -552,7 +553,9 @@ const RegistrationForm: React.FC = () => {
                         Previous
                       </Button>
                     )}
-                    <div className="ml-auto"> {/* Ensures buttons align correctly */}
+                    <div className="ml-auto">
+                      {" "}
+                      {/* Ensures buttons align correctly */}
                       {step < 5 ? (
                         <Button
                           type="button"
@@ -576,12 +579,12 @@ const RegistrationForm: React.FC = () => {
                   </div>
                 </>
               ) : (
-                 <VerificationStep
-                   email={formData.email}
-                   isEmailVerified={formData.isEmailVerified}
-                   onVerifyClick={() => setShowEmailOTP(true)}
-                   onFinalSubmit={handleFinalSubmit} // Assuming OTPDialog handles setting isEmailVerified
-                 />
+                <VerificationStep
+                  email={formData.email}
+                  isEmailVerified={formData.isEmailVerified}
+                  onVerifyClick={() => setShowEmailOTP(true)}
+                  onFinalSubmit={handleFinalSubmit} // Assuming OTPDialog handles setting isEmailVerified
+                />
               )}
 
               <div className="text-center text-sm text-gray-500 mt-4">
@@ -597,21 +600,21 @@ const RegistrationForm: React.FC = () => {
           isOpen={showEmailOTP}
           onClose={() => {
             setShowEmailOTP(false);
-             // Check verification status after closing dialog (requires OTPDialog to update state or use callback)
+            // Check verification status after closing dialog (requires OTPDialog to update state or use callback)
             // For now, let's assume OTPDialog successful close means verification
             // This needs proper implementation based on OTPDialog logic
-             const userId = localStorage.getItem("userId");
-             if (userId) { // Simple check if OTP might have been verified
-                // A more robust approach would involve OTPDialog calling a prop function on success
-                // e.g., onVerifySuccess={() => setFormData(prev => ({ ...prev, isEmailVerified: true }))}
-                // For demonstration, we manually trigger the state change here if dialog closes.
-                // In a real app, the API response in OTPDialog should confirm verification.
-                // setFormData(prev => ({ ...prev, isEmailVerified: true })); // Placeholder: Update based on actual verification
-             }
+            const userId = localStorage.getItem("userId");
+            if (userId) {
+              // Simple check if OTP might have been verified
+              // A more robust approach would involve OTPDialog calling a prop function on success
+              // e.g., onVerifySuccess={() => setFormData(prev => ({ ...prev, isEmailVerified: true }))}
+              // For demonstration, we manually trigger the state change here if dialog closes.
+              // In a real app, the API response in OTPDialog should confirm verification.
+              // setFormData(prev => ({ ...prev, isEmailVerified: true })); // Placeholder: Update based on actual verification
+            }
           }}
           type="email"
         />
-
       </div>
     </TooltipProvider>
   );

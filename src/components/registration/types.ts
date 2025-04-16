@@ -31,6 +31,7 @@ export interface RequestBody {
   referralCode: string;
   mobileNumber: string;
   email: string;
+  password: string;
   firstName: string;
   lastName: string;
   dateOfBirth: string;

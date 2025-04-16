@@ -141,7 +141,7 @@ const RegistrationForm: React.FC = () => {
     console.log("Sending registration request:", body);
     try {
       const response = await axios.post(
-        "http://localhost:5001/api/v1/auth/register",
+        "https://awm-mvp-backend.onrender.com/api/v1/auth/register",
         body
       );
       localStorage.setItem("userId", response.data.user.id);

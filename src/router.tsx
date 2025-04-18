@@ -9,9 +9,9 @@ export const appRouter = createBrowserRouter([
     path: "/",
     element: <App />, // Wrap everything inside App
     children: [
-      { path: "/", element: <Placeholder /> }, // Home page
+
       { path: "/register", element: <RegistrationForm /> },
-      { path: "/login", element: <Login /> },
+      { path: "/", element: <Login /> },
     ],
   },
 ]);

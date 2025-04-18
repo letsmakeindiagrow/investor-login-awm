@@ -98,7 +98,10 @@ const Login: React.FC = () => {
     try {
       const response = await axios.post(
         `${BACKEND_URL}/api/v1/auth/login`,
-        formData
+        formData,
+        {
+          withCredentials: true,
+        }
       );
       console.log("Login successful:", response.data);
       window.location.href = import.meta.env.VITE_REDIRECT_URL;

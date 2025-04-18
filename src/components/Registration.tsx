@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { StepIndicator, steps } from "./registration/StepIndicator";
 import { FormStep } from "./registration/FormStep";
@@ -12,10 +12,14 @@ import { VerificationStep } from "./registration/VerificationStep";
 import { OTPDialog } from "./registration/OTPDialog";
 import { FormData, Documents, RequestBody } from "./registration/types";
 
+// Use VITE_BACKEND_URL from .env for backend API base URL
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
 const RegistrationForm: React.FC = () => {
   const [step, setStep] = useState(1);
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
   const [showEmailOTP, setShowEmailOTP] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     referralCode: "",
     mobileNumber: "",
@@ -137,11 +141,13 @@ const RegistrationForm: React.FC = () => {
   };
 
   const sendRegistrationRequest = async () => {
+    console.trace("sendRegistrationRequest called");
     const body = createRequestBody(formData, documents);
     console.log("Sending registration request:", body);
     try {
+      setIsRegistering(true);
       const response = await axios.post(
-        "https://backend.aadyanviwealth.com/api/v1/auth/register",
+        `${BACKEND_URL}/api/v1/auth/register`,
         body,
         {
           withCredentials: true,
@@ -149,12 +155,14 @@ const RegistrationForm: React.FC = () => {
       );
       localStorage.setItem("userId", response.data.user.id);
       console.log("Registration successful, User ID:", response.data.user.id);
+      // setIsFormSubmitted(true); // Do not set here
       return true; // Indicate success
     } catch (error) {
       console.error("Registration failed:", error);
-      // Handle error display to the user
       alert("Registration failed. Please check your details and try again.");
       return false; // Indicate failure
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -298,20 +306,17 @@ const RegistrationForm: React.FC = () => {
     if (step === 5 && validateStep(5)) {
       const success = await sendRegistrationRequest();
       if (success) {
-        setIsFormSubmitted(true); // Move to OTP verification step
-      } else {
-        // Error handled in sendRegistrationRequest
+        setIsFormSubmitted(true); // Show OTP dialog
       }
+      // Do nothing if not successful (error handled in sendRegistrationRequest)
     }
   };
 
   const handleFinalSubmit = async () => {
-    // This function might be called after OTP verification confirms email
-    // For now, just log and alert completion
-    console.log("Final registration steps complete.");
+    // Just mark as verified, show success, etc.
+    setFormData(prev => ({ ...prev, isEmailVerified: true }));
+    // You can show a success message or redirect here if you want
     alert("Registration completed successfully!");
-    // Potentially redirect the user or update UI further
-    setFormData((prev) => ({ ...prev, isEmailVerified: true })); // Mark email as verified on successful OTP
   };
 
   // Function to render the current step's form fields
@@ -527,8 +532,20 @@ const RegistrationForm: React.FC = () => {
     }
   };
 
+  // Add this overlay component inside RegistrationForm
+  const LoadingOverlay = () => (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-xl shadow-2xl flex flex-col items-center animate-fade-in">
+        <Loader2 className="h-16 w-16 text-[#00ADEF] animate-spin mb-6" />
+        <h2 className="text-2xl font-semibold mb-2 text-[#00ADEF]">Processing Registration...</h2>
+        <p className="text-gray-600 text-center">Please wait while we create your account.<br/>This may take a few seconds.</p>
+      </div>
+    </div>
+  );
+
   return (
     <TooltipProvider>
+      {isRegistering && <LoadingOverlay />}
       <div className="min-h-screen p-6 bg-gray-50">
         <div className="mb-8 flex justify-center">
           <img
@@ -539,85 +556,70 @@ const RegistrationForm: React.FC = () => {
         </div>
         <Card className="w-full max-w-2xl mx-auto border-0 shadow-xl mt-10 mb-10">
           <CardContent className="pt-6">
-            <form onSubmit={handleInitialSubmit} className="space-y-6">
-              {!isFormSubmitted ? (
-                <>
-                  <StepIndicator currentStep={step} />
-                  {renderFormStep(step)}
-                  <div className="flex justify-between pt-6">
-                    {step > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setStep(step - 1)}
-                        className="flex items-center gap-2 border-[#AACF45] text-[#AACF45] hover:bg-[#AACF45] hover:text-white"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                        Previous
-                      </Button>
-                    )}
-                    <div className="ml-auto">
-                      {" "}
-                      {/* Ensures buttons align correctly */}
-                      {step < 5 ? (
+            {!showEmailOTP ? (
+              <form onSubmit={handleInitialSubmit} className="space-y-6">
+                {!isFormSubmitted ? (
+                  <>
+                    <StepIndicator currentStep={step} />
+                    {renderFormStep(step)}
+                    <div className="flex justify-between pt-6">
+                      {step > 1 && (
                         <Button
                           type="button"
-                          onClick={() => setStep(step + 1)}
-                          disabled={!validateStep(step)}
-                          className="flex items-center gap-2 bg-[#08AFF1] text-white hover:bg-[#0899d1] disabled:opacity-50"
+                          variant="outline"
+                          onClick={() => setStep(step - 1)}
+                          className="flex items-center gap-2 border-[#AACF45] text-[#AACF45] hover:bg-[#AACF45] hover:text-white"
                         >
-                          Next
-                          <ArrowRight className="w-4 h-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          type="submit"
-                          disabled={!validateStep(step)}
-                          className="flex items-center gap-2 bg-[#AACF45] text-white hover:bg-[#99bb3f] disabled:opacity-50"
-                        >
-                          Submit and Proceed to Verification
+                          <ArrowLeft className="w-4 h-4" />
+                          Previous
                         </Button>
                       )}
+                      <div className="ml-auto">
+                        {step < 5 ? (
+                          <Button
+                            type="button"
+                            onClick={() => setStep(step + 1)}
+                            disabled={!validateStep(step)}
+                            className="flex items-center gap-2 bg-[#08AFF1] text-white hover:bg-[#0899d1] disabled:opacity-50"
+                          >
+                            Next
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            type="submit"
+                            disabled={!validateStep(step)}
+                            className="flex items-center gap-2 bg-[#AACF45] text-white hover:bg-[#99bb3f] disabled:opacity-50"
+                          >
+                            Submit and Proceed to Verification
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </>
-              ) : (
-                <VerificationStep
-                  email={formData.email}
-                  isEmailVerified={formData.isEmailVerified}
-                  onVerifyClick={() => setShowEmailOTP(true)}
-                  onFinalSubmit={handleFinalSubmit} // Assuming OTPDialog handles setting isEmailVerified
-                />
-              )}
-
-              <div className="text-center text-sm text-gray-500 mt-4">
-                {!isFormSubmitted
-                  ? `Step ${step} of ${steps.length}: ${steps[step - 1].label}`
-                  : "Final Step: Contact Verification"}
-              </div>
-            </form>
+                  </>
+                ) : (
+                  <VerificationStep
+                    email={formData.email}
+                    isEmailVerified={formData.isEmailVerified}
+                    onVerifyClick={() => setShowEmailOTP(true)}
+                    onFinalSubmit={handleFinalSubmit}
+                  />
+                )}
+                <div className="text-center text-sm text-gray-500 mt-4">
+                  {!isFormSubmitted
+                    ? `Step ${step} of ${steps.length}: ${steps[step - 1].label}`
+                    : "Final Step: Contact Verification"}
+                </div>
+              </form>
+            ) : (
+              <OTPDialog
+                isOpen={showEmailOTP}
+                onClose={() => setShowEmailOTP(false)}
+                type="email"
+              />
+            )}
           </CardContent>
         </Card>
-
-        <OTPDialog
-          isOpen={showEmailOTP}
-          onClose={() => {
-            setShowEmailOTP(false);
-            // Check verification status after closing dialog (requires OTPDialog to update state or use callback)
-            // For now, let's assume OTPDialog successful close means verification
-            // This needs proper implementation based on OTPDialog logic
-            const userId = localStorage.getItem("userId");
-            if (userId) {
-              // Simple check if OTP might have been verified
-              // A more robust approach would involve OTPDialog calling a prop function on success
-              // e.g., onVerifySuccess={() => setFormData(prev => ({ ...prev, isEmailVerified: true }))}
-              // For demonstration, we manually trigger the state change here if dialog closes.
-              // In a real app, the API response in OTPDialog should confirm verification.
-              // setFormData(prev => ({ ...prev, isEmailVerified: true })); // Placeholder: Update based on actual verification
-            }
-          }}
-          type="email"
-        />
       </div>
     </TooltipProvider>
   );

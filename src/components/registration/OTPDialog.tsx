@@ -10,11 +10,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const REDIRECT_URL = import.meta.env.VITE_REDIRECT_URL;
+
 interface OTPDialogProps {
   isOpen: boolean;
   onClose: () => void;
   type: "email" | "mobile";
 }
+
+// Use VITE_BACKEND_URL from .env for backend API base URL
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const OTPDialog: React.FC<OTPDialogProps> = ({
   isOpen,
@@ -25,7 +30,7 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    e.stopPropagation();
     try {
       const userId = localStorage.getItem("userId");
 
@@ -35,7 +40,7 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({
       }
 
       const response = await axios.post(
-        "http://localhost:5001/api/v1/auth/verify-otp",
+        `${BACKEND_URL}/api/v1/auth/verify-otp`,
         {
           userId,
           otp,
@@ -45,7 +50,7 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({
       if (response.data) {
         console.log("OTP verified successfully");
         onClose();
-        console.log(response);
+        window.location.href = REDIRECT_URL;
       }
     } catch (error) {
       console.error("OTP verification failed:", error);
@@ -71,7 +76,10 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({
               placeholder="Enter 6-digit OTP"
             />
           </div>
-          <Button type="submit" className="w-full">
+          <Button
+            type="submit"
+            className="w-full bg-[#08AFF1] text-white hover:bg-[#0899d1]"
+          >
             Verify OTP
           </Button>
         </form>

@@ -10,6 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const REDIRECT_URL = import.meta.env.VITE_REDIRECT_URL;
+
 interface OTPDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -48,7 +50,7 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({
       if (response.data) {
         console.log("OTP verified successfully");
         onClose();
-        console.log(response);
+        window.location.href = REDIRECT_URL;
       }
     } catch (error) {
       console.error("OTP verification failed:", error);
@@ -74,7 +76,10 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({
               placeholder="Enter 6-digit OTP"
             />
           </div>
-          <Button type="submit" className="w-full bg-[#08AFF1] text-white hover:bg-[#0899d1]">
+          <Button
+            type="submit"
+            className="w-full bg-[#08AFF1] text-white hover:bg-[#0899d1]"
+          >
             Verify OTP
           </Button>
         </form>

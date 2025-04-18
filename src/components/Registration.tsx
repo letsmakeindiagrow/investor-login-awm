@@ -725,7 +725,7 @@ const RegistrationForm: React.FC = () => {
                   dashboard.
                 </p>
                 <a
-                  href="https://investor.aadyanviwealth.com"
+                  href="https://www.aadyanviwealth.com"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

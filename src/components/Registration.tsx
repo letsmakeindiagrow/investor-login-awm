@@ -20,6 +20,7 @@ const RegistrationForm: React.FC = () => {
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
   const [showEmailOTP, setShowEmailOTP] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     referralCode: "",
     mobileNumber: "",
@@ -50,6 +51,7 @@ const RegistrationForm: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [underageError, setUnderageError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -58,6 +60,27 @@ const RegistrationForm: React.FC = () => {
       [name]: value,
     }));
     validateField(name, value);
+    if (name === "dateOfBirth") {
+      // Check if user is under 18
+      const dob = new Date(value);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      const d = today.getDate() - dob.getDate();
+      let isUnder18 = false;
+      if (age < 18) {
+        isUnder18 = true;
+      } else if (age === 18) {
+        if (m < 0 || (m === 0 && d < 0)) {
+          isUnder18 = true;
+        }
+      }
+      if (isUnder18) {
+        setUnderageError("You must be at least 18 years old to register.");
+      } else {
+        setUnderageError("");
+      }
+    }
   };
 
   const handleFileChange =
@@ -276,8 +299,12 @@ const RegistrationForm: React.FC = () => {
       case 1:
         return Boolean(formData.mobileNumber && formData.email);
       case 2:
+        // Also check underageError
         return Boolean(
-          formData.firstName && formData.lastName && formData.dateOfBirth
+          formData.firstName &&
+          formData.lastName &&
+          formData.dateOfBirth &&
+          !underageError
         );
       case 3:
         return Boolean(
@@ -406,6 +433,9 @@ const RegistrationForm: React.FC = () => {
               onChange={handleInputChange}
               required
             />
+            {underageError && (
+              <div className="text-red-500 text-sm mt-1">{underageError}</div>
+            )}
           </FormStep>
         );
       case 3:
@@ -556,7 +586,20 @@ const RegistrationForm: React.FC = () => {
         </div>
         <Card className="w-full max-w-2xl mx-auto border-0 shadow-xl mt-10 mb-10">
           <CardContent className="pt-6">
-            {!showEmailOTP ? (
+            {isVerified ? (
+              <div className="flex flex-col items-center justify-center min-h-[300px] text-center p-8">
+                <div className="mb-6 animate-bounce">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-[#A8CF45]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2l4 -4" /></svg>
+                </div>
+                <h1 className="text-2xl font-bold mb-4">Verification Completed!</h1>
+                <p className="text-gray-600 mb-8 max-w-md">
+                  Your email has been verified. You can now go to your dashboard.
+                </p>
+                <a href="https://investor.aadyanviwealth.com" target="_blank" rel="noopener noreferrer">
+                  <Button className="bg-[#00ADEF] hover:bg-[#0099d1] text-white">Go to Dashboard</Button>
+                </a>
+              </div>
+            ) : !showEmailOTP ? (
               <form onSubmit={handleInitialSubmit} className="space-y-6">
                 {!isFormSubmitted ? (
                   <>
@@ -614,7 +657,10 @@ const RegistrationForm: React.FC = () => {
             ) : (
               <OTPDialog
                 isOpen={showEmailOTP}
-                onClose={() => setShowEmailOTP(false)}
+                onClose={() => {
+                  setShowEmailOTP(false);
+                  setIsVerified(true);
+                }}
                 type="email"
               />
             )}

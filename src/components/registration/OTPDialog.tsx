@@ -74,7 +74,7 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({
               placeholder="Enter 6-digit OTP"
             />
           </div>
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full bg-[#08AFF1] text-white hover:bg-[#0899d1]">
             Verify OTP
           </Button>
         </form>

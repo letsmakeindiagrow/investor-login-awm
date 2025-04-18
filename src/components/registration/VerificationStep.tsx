@@ -24,7 +24,7 @@ export const VerificationStep: React.FC<VerificationStepProps> = ({
             <Button
               onClick={onVerifyClick}
               disabled={isEmailVerified}
-              className="bg-blue-600 text-white hover:bg-blue-700"
+              className="bg-[#08AFF1] text-white hover:bg-[#0899d1]"
             >
               {isEmailVerified ? "Verified ✓" : "Verify"}
             </Button>

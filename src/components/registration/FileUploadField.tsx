@@ -7,8 +7,12 @@ import { Upload, Check } from "lucide-react";
 interface FileUploadFieldProps {
   label: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  file: string;
+  file: string | null;
   accept?: string;
+  fileUrl?: string;
+  isUploading?: boolean;
+  progress?: number;
+  error?: string;
 }
 
 export const FileUploadField: React.FC<FileUploadFieldProps> = ({
@@ -37,7 +41,9 @@ export const FileUploadField: React.FC<FileUploadFieldProps> = ({
       <Button
         type="button"
         variant="outline"
-        onClick={() => document.getElementById(label.replace(/\s+/g, ""))?.click()}
+        onClick={() =>
+          document.getElementById(label.replace(/\s+/g, ""))?.click()
+        }
       >
         {file ? "Change File" : "Choose File"}
       </Button>

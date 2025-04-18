@@ -10,7 +10,12 @@ import { InputField } from "./registration/InputField";
 import { FileUploadField } from "./registration/FileUploadField";
 import { VerificationStep } from "./registration/VerificationStep";
 import { OTPDialog } from "./registration/OTPDialog";
-import { FormData, Documents, RequestBody } from "./registration/types";
+import {
+  type FormData,
+  type Documents,
+  type RequestBody,
+  type DocumentUrls,
+} from "./registration/types";
 
 // Use VITE_BACKEND_URL from .env for backend API base URL
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -44,6 +49,13 @@ const RegistrationForm: React.FC = () => {
   });
 
   const [documents, setDocuments] = useState<Documents>({
+    panAttachment: null,
+    aadharFront: null,
+    aadharBack: null,
+    bankProof: null,
+  });
+
+  const [documentUrls, setDocumentUrls] = useState<DocumentUrls>({
     panAttachment: "",
     aadharFront: "",
     aadharBack: "",
@@ -52,6 +64,15 @@ const RegistrationForm: React.FC = () => {
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [underageError, setUnderageError] = useState("");
+  const [isUploading, setIsUploading] = useState<{ [key: string]: boolean }>(
+    {}
+  );
+  const [uploadProgress, setUploadProgress] = useState<{
+    [key: string]: number;
+  }>({});
+  const [uploadErrors, setUploadErrors] = useState<{ [key: string]: string }>(
+    {}
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -83,37 +104,96 @@ const RegistrationForm: React.FC = () => {
     }
   };
 
+  const uploadFile = async (file: File, documentType: keyof Documents) => {
+    const maxSize = 5 * 1024 * 1024; // 5MB max size
+
+    if (file.size > maxSize) {
+      setUploadErrors((prev) => ({
+        ...prev,
+        [documentType]: "File size must be less than 5MB",
+      }));
+      return null;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("documentType", documentType);
+
+    try {
+      setIsUploading((prev) => ({ ...prev, [documentType]: true }));
+
+      const response = await axios.post(
+        `${BACKEND_URL}/api/v1/documents/upload`,
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const progress = progressEvent.total
+              ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              : 0;
+            setUploadProgress((prev) => ({
+              ...prev,
+              [documentType]: progress,
+            }));
+          },
+        }
+      );
+
+      // Store both the File object and the uploaded URL
+      setDocuments((prev) => ({
+        ...prev,
+        [documentType]: file,
+      }));
+      setDocumentUrls((prev) => ({
+        ...prev,
+        [documentType]: response.data.url,
+      }));
+
+      return response.data.url;
+    } catch (error) {
+      console.error(`Error uploading ${documentType}:`, error);
+      setUploadErrors((prev) => ({
+        ...prev,
+        [documentType]: "Failed to upload file. Please try again.",
+      }));
+      return null;
+    } finally {
+      setIsUploading((prev) => ({ ...prev, [documentType]: false }));
+      setUploadProgress((prev) => ({ ...prev, [documentType]: 0 }));
+    }
+  };
+
   const handleFileChange =
-    (name: keyof Documents) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    (name: keyof Documents) =>
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
-        // For now, storing the file name. In a real app, you'd upload this.
-        setDocuments((prev) => ({
-          ...prev,
-          [name]: file.name, // Storing file name for display, replace with actual upload logic
-        }));
+        await uploadFile(file, name);
       }
     };
 
   const createRequestBody = (
     formData: FormData,
-    documents: Documents
+    documentUrls: DocumentUrls
   ): RequestBody => {
-    // Placeholder for actual document URLs after upload
-    const placeholderUrl = "https://example.com/placeholder.pdf";
+    // Validate that all required documents are uploaded
+    const requiredDocuments = [
+      "panAttachment",
+      "aadharFront",
+      "aadharBack",
+      "bankProof",
+    ] as const;
+    const missingDocuments = requiredDocuments.filter(
+      (doc) => !documentUrls[doc]
+    );
 
-    if (
-      !documents.panAttachment ||
-      !documents.aadharFront ||
-      !documents.aadharBack ||
-      !documents.bankProof
-    ) {
-      // It's better to validate this before allowing submission,
-      // but adding a safeguard here.
-      console.error("All document proofs are required.");
-      // Handle this error appropriately, maybe show a message to the user.
-      // Throwing an error might be too abrupt depending on UX goals.
-      // For now, we'll proceed with placeholders but log the issue.
+    if (missingDocuments.length > 0) {
+      throw new Error(
+        `Missing required documents: ${missingDocuments.join(", ")}`
+      );
     }
 
     function convertToISO(dateString: string): string {
@@ -148,14 +228,14 @@ const RegistrationForm: React.FC = () => {
         accountNumber: formData.bankAccountNumber,
         ifscCode: formData.ifscCode,
         branchName: formData.bankBranchName,
-        proofAttachment: documents.bankProof ? placeholderUrl : "", // Use placeholder or actual URL
+        proofAttachment: documentUrls.bankProof, // Use the uploaded URL
       },
       identityDetails: {
         panNumber: formData.panNumber,
-        panAttachment: documents.panAttachment ? placeholderUrl : "", // Use placeholder or actual URL
+        panAttachment: documentUrls.panAttachment, // Use the uploaded URL
         aadharNumber: formData.aadharNumber,
-        aadharFront: documents.aadharFront ? placeholderUrl : "", // Use placeholder or actual URL
-        aadharBack: documents.aadharBack ? placeholderUrl : "", // Use placeholder or actual URL
+        aadharFront: documentUrls.aadharFront, // Use the uploaded URL
+        aadharBack: documentUrls.aadharBack, // Use the uploaded URL
       },
       password: formData.password,
     };
@@ -165,10 +245,21 @@ const RegistrationForm: React.FC = () => {
 
   const sendRegistrationRequest = async () => {
     console.trace("sendRegistrationRequest called");
-    const body = createRequestBody(formData, documents);
-    console.log("Sending registration request:", body);
+
+    // Check if all required documents are uploaded
+    const allDocumentsUploaded = Object.values(documentUrls).every(
+      (url) => url !== ""
+    );
+    if (!allDocumentsUploaded) {
+      alert("Please upload all required documents before proceeding.");
+      return false;
+    }
+
     try {
       setIsRegistering(true);
+      const body = createRequestBody(formData, documentUrls);
+      console.log("Sending registration request:", body);
+
       const response = await axios.post(
         `${BACKEND_URL}/api/v1/auth/register`,
         body,
@@ -176,14 +267,14 @@ const RegistrationForm: React.FC = () => {
           withCredentials: true,
         }
       );
+
       localStorage.setItem("userId", response.data.user.id);
       console.log("Registration successful, User ID:", response.data.user.id);
-      // setIsFormSubmitted(true); // Do not set here
-      return true; // Indicate success
+      return true;
     } catch (error) {
       console.error("Registration failed:", error);
       alert("Registration failed. Please check your details and try again.");
-      return false; // Indicate failure
+      return false;
     } finally {
       setIsRegistering(false);
     }
@@ -302,17 +393,17 @@ const RegistrationForm: React.FC = () => {
         // Also check underageError
         return Boolean(
           formData.firstName &&
-          formData.lastName &&
-          formData.dateOfBirth &&
-          !underageError
+            formData.lastName &&
+            formData.dateOfBirth &&
+            !underageError
         );
       case 3:
         return Boolean(
           formData.panNumber &&
             formData.aadharNumber &&
-            documents.panAttachment &&
-            documents.aadharFront &&
-            documents.aadharBack
+            documentUrls.panAttachment &&
+            documentUrls.aadharFront &&
+            documentUrls.aadharBack
         );
       case 4:
         return Boolean(formData.line1 && formData.city && formData.pincode);
@@ -321,7 +412,7 @@ const RegistrationForm: React.FC = () => {
           formData.bankAccountNumber &&
             formData.ifscCode &&
             formData.bankBranchName &&
-            documents.bankProof
+            documentUrls.bankProof
         );
       default:
         return false;
@@ -341,7 +432,7 @@ const RegistrationForm: React.FC = () => {
 
   const handleFinalSubmit = async () => {
     // Just mark as verified, show success, etc.
-    setFormData(prev => ({ ...prev, isEmailVerified: true }));
+    setFormData((prev) => ({ ...prev, isEmailVerified: true }));
     // You can show a success message or redirect here if you want
     alert("Registration completed successfully!");
   };
@@ -455,6 +546,10 @@ const RegistrationForm: React.FC = () => {
               label="PAN Card Attachment"
               onChange={handleFileChange("panAttachment")}
               file={documents.panAttachment}
+              fileUrl={documentUrls.panAttachment}
+              isUploading={isUploading.panAttachment}
+              progress={uploadProgress.panAttachment}
+              error={uploadErrors.panAttachment}
             />
             <InputField
               label="Aadhar Number"
@@ -471,11 +566,19 @@ const RegistrationForm: React.FC = () => {
                 label="Aadhar Front"
                 onChange={handleFileChange("aadharFront")}
                 file={documents.aadharFront}
+                fileUrl={documentUrls.aadharFront}
+                isUploading={isUploading.aadharFront}
+                progress={uploadProgress.aadharFront}
+                error={uploadErrors.aadharFront}
               />
               <FileUploadField
                 label="Aadhar Back"
                 onChange={handleFileChange("aadharBack")}
                 file={documents.aadharBack}
+                fileUrl={documentUrls.aadharBack}
+                isUploading={isUploading.aadharBack}
+                progress={uploadProgress.aadharBack}
+                error={uploadErrors.aadharBack}
               />
             </div>
           </FormStep>
@@ -554,6 +657,10 @@ const RegistrationForm: React.FC = () => {
               label="Bank Proof (Cancelled Cheque/Passbook/Statement)"
               onChange={handleFileChange("bankProof")}
               file={documents.bankProof}
+              fileUrl={documentUrls.bankProof}
+              isUploading={isUploading.bankProof}
+              progress={uploadProgress.bankProof}
+              error={uploadErrors.bankProof}
             />
           </FormStep>
         );
@@ -567,8 +674,14 @@ const RegistrationForm: React.FC = () => {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-xl shadow-2xl flex flex-col items-center animate-fade-in">
         <Loader2 className="h-16 w-16 text-[#00ADEF] animate-spin mb-6" />
-        <h2 className="text-2xl font-semibold mb-2 text-[#00ADEF]">Processing Registration...</h2>
-        <p className="text-gray-600 text-center">Please wait while we create your account.<br/>This may take a few seconds.</p>
+        <h2 className="text-2xl font-semibold mb-2 text-[#00ADEF]">
+          Processing Registration...
+        </h2>
+        <p className="text-gray-600 text-center">
+          Please wait while we create your account.
+          <br />
+          This may take a few seconds.
+        </p>
       </div>
     </div>
   );
@@ -589,14 +702,36 @@ const RegistrationForm: React.FC = () => {
             {isVerified ? (
               <div className="flex flex-col items-center justify-center min-h-[300px] text-center p-8">
                 <div className="mb-6 animate-bounce">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-[#A8CF45]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2l4 -4" /></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-20 w-20 text-[#A8CF45]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2l4 -4"
+                    />
+                  </svg>
                 </div>
-                <h1 className="text-2xl font-bold mb-4">Verification Completed!</h1>
+                <h1 className="text-2xl font-bold mb-4">
+                  Verification Completed!
+                </h1>
                 <p className="text-gray-600 mb-8 max-w-md">
-                  Your email has been verified. You can now go to your dashboard.
+                  Your email has been verified. You can now go to your
+                  dashboard.
                 </p>
-                <a href="https://investor.aadyanviwealth.com" target="_blank" rel="noopener noreferrer">
-                  <Button className="bg-[#00ADEF] hover:bg-[#0099d1] text-white">Go to Dashboard</Button>
+                <a
+                  href="https://investor.aadyanviwealth.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button className="bg-[#00ADEF] hover:bg-[#0099d1] text-white">
+                    Go to Dashboard
+                  </Button>
                 </a>
               </div>
             ) : !showEmailOTP ? (
@@ -650,7 +785,9 @@ const RegistrationForm: React.FC = () => {
                 )}
                 <div className="text-center text-sm text-gray-500 mt-4">
                   {!isFormSubmitted
-                    ? `Step ${step} of ${steps.length}: ${steps[step - 1].label}`
+                    ? `Step ${step} of ${steps.length}: ${
+                        steps[step - 1].label
+                      }`
                     : "Final Step: Contact Verification"}
                 </div>
               </form>

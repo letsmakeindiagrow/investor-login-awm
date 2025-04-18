@@ -21,6 +21,13 @@ export interface FormData {
 }
 
 export interface Documents {
+  panAttachment: string | null;
+  aadharFront: string | null;
+  aadharBack: string | null;
+  bankProof: string | null;
+}
+
+export interface DocumentUrls {
   panAttachment: string;
   aadharFront: string;
   aadharBack: string;

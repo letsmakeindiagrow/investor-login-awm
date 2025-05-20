@@ -1,9 +1,9 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" },
     {
       "source": "/api/:path*",
       "destination": "https://backend.aadyanviwealth.com/api/:path*"
-    }
+    },
+    { "source": "/(.*)", "destination": "/" }
   ]
 }

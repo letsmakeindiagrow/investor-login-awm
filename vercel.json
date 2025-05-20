@@ -3,7 +3,7 @@
     { "source": "/(.*)", "destination": "/" },
     {
       "source": "/api/:path*",
-      "destination": "https://backend.abc.com/api/:path*"
+      "destination": "https://backend.aadyanviwealth.com/api/:path*"
     }
   ]
 }

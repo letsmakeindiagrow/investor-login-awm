@@ -18,9 +18,6 @@ interface OTPDialogProps {
   type: "email" | "mobile";
 }
 
-// Use VITE_BACKEND_URL from .env for backend API base URL
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
 export const OTPDialog: React.FC<OTPDialogProps> = ({
   isOpen,
   onClose,
@@ -39,13 +36,10 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({
         return;
       }
 
-      const response = await axios.post(
-        `${BACKEND_URL}/api/v1/auth/verify-otp`,
-        {
-          userId,
-          otp,
-        }
-      );
+      const response = await axios.post(`/api/v1/auth/verify-otp`, {
+        userId,
+        otp,
+      });
 
       if (response.data) {
         console.log("OTP verified successfully");

@@ -3,12 +3,11 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const REDIRECT_URL = import.meta.env.VITE_REDIRECT_URL;
 
 const checkAuth = async () => {
   try {
-    const res = await axios.get(`${BACKEND_URL}/api/v1/investor/checkAuth`, {
+    const res = await axios.get(`/api/v1/investor/checkAuth`, {
       withCredentials: true,
     });
     return res.data.authenticated;

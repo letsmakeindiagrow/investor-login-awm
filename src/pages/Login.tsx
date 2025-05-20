@@ -12,8 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
 interface ApiErrorResponse {
   message?: string;
   error?: string;
@@ -96,13 +94,9 @@ const Login: React.FC = () => {
     }
 
     try {
-      const response = await axios.post(
-        `${BACKEND_URL}/api/v1/auth/login`,
-        formData,
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await axios.post(`/api/v1/auth/login`, formData, {
+        withCredentials: true,
+      });
       console.log("Login successful:", response.data);
       window.location.href = import.meta.env.VITE_REDIRECT_URL;
     } catch (error) {

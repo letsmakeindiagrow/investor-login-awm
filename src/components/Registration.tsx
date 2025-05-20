@@ -17,9 +17,6 @@ import {
   type DocumentUrls,
 } from "./registration/types";
 
-// Use VITE_BACKEND_URL from .env for backend API base URL
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
 const RegistrationForm: React.FC = () => {
   const [step, setStep] = useState(1);
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
@@ -122,25 +119,21 @@ const RegistrationForm: React.FC = () => {
     try {
       setIsUploading((prev) => ({ ...prev, [documentType]: true }));
 
-      const response = await axios.post(
-        `${BACKEND_URL}/api/v1/documents/upload`,
-        formData,
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          onUploadProgress: (progressEvent) => {
-            const progress = progressEvent.total
-              ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
-              : 0;
-            setUploadProgress((prev) => ({
-              ...prev,
-              [documentType]: progress,
-            }));
-          },
-        }
-      );
+      const response = await axios.post(`/api/v1/documents/upload`, formData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          const progress = progressEvent.total
+            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            : 0;
+          setUploadProgress((prev) => ({
+            ...prev,
+            [documentType]: progress,
+          }));
+        },
+      });
 
       // Store both the File object and the uploaded URL
       setDocuments((prev) => ({
@@ -260,13 +253,9 @@ const RegistrationForm: React.FC = () => {
       const body = createRequestBody(formData, documentUrls);
       console.log("Sending registration request:", body);
 
-      const response = await axios.post(
-        `${BACKEND_URL}/api/v1/auth/register`,
-        body,
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await axios.post(`/api/v1/auth/register`, body, {
+        withCredentials: true,
+      });
 
       localStorage.setItem("userId", response.data.user.id);
       console.log("Registration successful, User ID:", response.data.user.id);
